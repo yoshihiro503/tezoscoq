@@ -384,13 +384,11 @@ Lemma evaluate_sound : forall pgm s m s' m',
 Proof.
 Admitted.
 
-Lemma step_fun_preserves_type pgm st1 st2 s m f :
+Lemma step_fun_preserves_type pgm st1 st2 s m s' m' f :
   has_prog_type pgm (Pre_post st1 st2) ->
   has_stack_type s st1 ->
-  match (evaluate pgm s m f) with
-  | Some (s',m') => has_stack_type s' st2
-  | None => True
-  end.
+  evaluate pgm s m f = Some (s',m') ->
+  has_stack_type s' st2.
 Proof.
 move: f pgm st1 st2 s m.
 elim => [|f HIf] pgm st1 st2 s m //.
