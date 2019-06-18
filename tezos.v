@@ -160,32 +160,28 @@ program and programs *)
 Inductive has_prog_type : program -> instr_type -> Prop :=
 | PT_empty : forall st,
     has_prog_type nil (Pre_post st st)
-| PT_seq : forall x xs s sa sb sc,
-    has_instr_type x s (Pre_post sa sb) ->
+| PT_seq : forall x xs sa sb sc,
+    has_instr_type x (Pre_post sa sb) ->
     has_prog_type xs (Pre_post sb sc) ->
     has_prog_type (x::xs) (Pre_post sa sc)
 
-with has_instr_type : instr -> stack -> instr_type -> Prop :=
-| IT_Drop : forall x s (t : type) (st : stack_type),
+with has_instr_type : instr -> instr_type -> Prop :=
+| IT_Drop : forall s (t : type) (st : stack_type),
     has_stack_type s st ->
-    has_type x t ->
-    has_instr_type Drop (x::s) (Pre_post (cons_stack t st) (st))
-
-| IT_Dup : forall x s (t : type) (st : stack_type),
+    has_instr_type Drop (Pre_post (cons_stack t st) (st))
+| IT_Dup : forall s (t : type) (st : stack_type),
     has_stack_type s st ->
-    has_type x t ->
-    has_instr_type Dup (x::s) (Pre_post (cons_stack t st) (cons_stack t (cons_stack t st)))
+    has_instr_type Dup (Pre_post (cons_stack t st) (cons_stack t (cons_stack t st)))
 
-| IT_If : forall bvar sta stb bt bf xs,
-    has_type bvar t_bool ->
+| IT_If : forall sta stb bt bf xs,
     has_stack_type xs sta ->
     has_prog_type bt (Pre_post sta stb) ->
     has_prog_type bf (Pre_post sta stb) ->
-    has_instr_type (If bt bf) (bvar::xs) (Pre_post (cons_stack t_bool sta) stb)
+    has_instr_type (If bt bf) (Pre_post (cons_stack t_bool sta) stb)
 | IT_Loop : forall s a body,
     has_stack_type s (cons_stack t_bool a) ->
     has_prog_type body (Pre_post a (cons_stack t_bool a)) ->
-    has_instr_type (Loop body) s (Pre_post (cons_stack t_bool a) a)
+    has_instr_type (Loop body) (Pre_post (cons_stack t_bool a) a)
 
 with has_stack_type : stack -> stack_type -> Prop :=
 | ST_empty : has_stack_type nil empty_stack
@@ -220,8 +216,8 @@ Proof.
 by repeat econstructor.
 Qed.
 
-Lemma PT_instr_to_prog i s t :
-  has_instr_type i s t ->
+Lemma PT_instr_to_prog i t :
+  has_instr_type i t ->
   has_prog_type [::i] t.
 Proof.
 by case: t; eauto.
@@ -232,12 +228,11 @@ a good idea to type an instruction against a stack, but to type a
 program independently *)
 Lemma PT_prog_to_instr i t :
   has_prog_type [::i] t ->
-  exists s, has_instr_type i s t.
+  has_instr_type i t.
 Proof.
 case: t => s0 s1 H.
 inversion H; subst.
-inversion H5; subst.
-by exists s.
+by inversion H5; subst.
 Qed.
 
 End Typing.
