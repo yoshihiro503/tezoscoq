@@ -302,7 +302,41 @@ Lemma big_step_instr_preserves_type instr st1 st2 s1 m1 s2 m2 :
   big_step_instr instr s1 m1 s2 m2 ->
   has_stack_type s2 st2.
 Proof.
-Admitted.
+    move=> HIT HST BSI.
+  move: st1 st2 HIT HST.
+  apply (big_step_instr_mut) with
+      (P0 := fun pgm s1 m1 s2 m2 BSP => forall st1 st2,
+                 has_stack_type s1 st1 ->
+                 has_prog_type pgm (Pre_post st1 st2) ->
+                 has_stack_type s2 st2)
+      (i:=instr) (s:=s1)(m:=m1)(s0:=s2)(m0:=m2).
+  - (* instr = Drop の場合 *)
+    move=> x s _ st1 st2.
+    inversion 1. subst st1 st2.
+    inversion 1. by subst st0 x0 xs t0.
+  - (* instr = Loop Dtrue の場合 *)
+    move=> body s m s' m' s'' m'' BSP IHPgm BSI' IHInstr st1 st2 HIT.
+    inversion 1. subst.
+    inversion HIT. subst.
+    apply IHInstr with (st1 := cons_stack t_bool st2).
+    + now assumption.
+    + by apply IHPgm with (st1 := st2).
+  - (* instr = Loop Dfalse の場合 *)
+    move=> body s _ st1 st2 HIT.
+    inversion 1. subst.
+    inversion HST. subst.
+    inversion HIT. by subst.
+  - (* instrs = [] の場合 *)
+    move=> s _ st1 st2 HST.
+    inversion 1. by subst.
+  - (* instrs = i::pgm の場合 *)
+    move=> i instrs s m s' m' s'' m'' BSI' IH1 BSP IH2 st1 st2 HST.
+    inversion 1. subst.
+    apply IH2 with (st1 := sb).
+    + by apply IH1 with (st1 := st1).
+    + assumption.
+  - by idtac.
+Qed.
 
 Lemma big_step_program_preserves_type pgm st1 st2 s1 m1 s2 m2 :
   has_prog_type pgm (Pre_post st1 st2)  ->
