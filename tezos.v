@@ -1,5 +1,5 @@
 From Coq
-  Require Import ZArith String List.
+  Require Import Arith ZArith String List.
 Import ListNotations.
 From mathcomp.ssreflect
   Require Import ssreflect ssrfun ssrbool ssrnat seq.
@@ -290,9 +290,6 @@ with big_step_program : list instr -> stack -> memory ->
     big_step_program (i :: instrs) s m s'' m''
 .
 
-Hint Constructors big_step_instr.
-Hint Constructors big_step_program.
-
 Scheme big_step_instr_mut := Induction for big_step_instr Sort Prop
   with big_step_program_mut := Induction for big_step_program Sort Prop.
 
@@ -349,6 +346,8 @@ Admitted.
 
 End Ind_semantics.
 
+Hint Constructors big_step_instr.
+Hint Constructors big_step_program.
 
 (* Second version: with a step function *)
 Section Fun_semantics.
@@ -412,11 +411,42 @@ elim => [|p ps Hps] q st1 st2 st3.
 - by move => Hp Hq; inversion Hp; econstructor; eauto.
 Qed.
 
+Lemma evaluate_app_split : forall pgm1 pgm2 s1 m1 s2 m2 f,
+    evaluate (pgm1 ++ pgm2) s1 m1 f = Some (s2, m2) ->
+    exists f1 s m,
+      evaluate pgm1 s1 m1 f1 = Some (s, m)
+      /\ evaluate pgm2 s m (f - f1) = Some (s2, m2).
+Proof.
+Admitted.
+
 Lemma evaluate_sound : forall pgm s m s' m',
     (exists f, evaluate pgm s m f = Some (s', m')) ->
     big_step_program pgm s m s' m'.
 Proof.
-Admitted.
+  move=> pgm s m s' m' [f Ev]. move: pgm s m s' m' Ev.
+  induction f using (well_founded_ind lt_wf).
+  move=> pgm s m s' m' Ev.
+  destruct f; [by idtac|].
+  destruct pgm.
+  - (* pgm = [] *)
+    injection Ev. move=> eq1 eq2. by subst.
+  - (* pgm = cons *)
+    rewrite <- cat1s in Ev.
+    destruct (evaluate_app_split _ _ _ _ _ Ev) as [f1 [s0 [m0 [Ev1 Ev2]]]].
+    cut (f.+1 - f1 > 0)%coq_nat;
+      [|by destruct (f.+1 - f1); [inversion Ev2|auto with arith]].
+    move=> gt. apply lt_O_minus_lt in gt.
+    apply BSPCons with (s' := s0)(m' := m0).
+    + cut (big_step_program [i] s m s0 m0).
+      * inversion 1. subst i0 instrs s1 m1 s'' m''.
+        inversion H8. by subst s'0 m'0 s1 m1.
+      * by apply (H f1).
+    + apply (H (f.+1 - f1)); [| by auto].
+      (* f + 1 - f1 < f + 1 *)
+      cut (0 < f1)%coq_nat.
+      * apply Nat.sub_lt. auto with arith.
+      * by destruct f1; [inversion Ev1| auto with arith].
+Qed.
 
 Lemma step_fun_preserves_type pgm st1 st2 s m s' m' f :
   has_prog_type pgm (Pre_post st1 st2) ->
