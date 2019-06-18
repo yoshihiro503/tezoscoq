@@ -295,6 +295,24 @@ Hint Constructors big_step_program.
 
 Scheme big_step_instr_mut := Induction for big_step_instr Sort Prop
   with big_step_program_mut := Induction for big_step_program Sort Prop.
+
+Lemma big_step_instr_preserves_type instr st1 st2 s1 m1 s2 m2 :
+  has_instr_type instr (Pre_post st1 st2)  ->
+  has_stack_type s1 st1 ->
+  big_step_instr instr s1 m1 s2 m2 ->
+  has_stack_type s2 st2.
+Proof.
+Admitted.
+
+Lemma big_step_program_preserves_type pgm st1 st2 s1 m1 s2 m2 :
+  has_prog_type pgm (Pre_post st1 st2)  ->
+  has_stack_type s1 st1 ->
+  big_step_program pgm s1 m1 s2 m2 ->
+  has_stack_type s2 st2.
+Proof.
+  (* (instr := If true then pgm else []) *)
+Admitted.
+
 End Ind_semantics.
 
 
@@ -359,6 +377,12 @@ elim => [|p ps Hps] q st1 st2 st3.
 - by move => Hnil; inversion Hnil.
 - by move => Hp Hq; inversion Hp; econstructor; eauto.
 Qed.
+
+Lemma evaluate_sound : forall pgm s m s' m',
+    (exists f, evaluate pgm s m f = Some (s', m')) ->
+    big_step_program pgm s m s' m'.
+Proof.
+Admitted.
 
 Lemma step_fun_preserves_type pgm st1 st2 s m f :
   has_prog_type pgm (Pre_post st1 st2) ->
