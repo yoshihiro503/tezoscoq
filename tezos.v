@@ -268,6 +268,33 @@ Inductive step : instr * program * stack * memory ->
          (cont, s, m)
 .
 
+
+ Inductive big_step_instr : instr -> stack -> memory ->
+                           stack -> memory -> Prop :=
+| BSIDrop : forall x s m,
+    big_step_instr Drop (x::s) m s m
+| BSILoopGo : forall body s m s' m' s'' m'',
+    big_step_program body s m s' m' ->
+    big_step_instr (Loop body) s' m' s'' m'' ->
+    big_step_instr (Loop body) (Dtrue :: s) m s'' m''
+| BSILoopEnd : forall body s m,
+    big_step_instr (Loop body) (Dfalse :: s) m s m
+(* TODO *)
+with big_step_program : list instr -> stack -> memory ->
+                       stack -> memory -> Prop :=
+| BSPNil : forall s m,
+    big_step_program [] s m s m
+| BSPCons : forall i instrs s m s' m' s'' m'',
+    big_step_instr i s m s' m' ->
+    big_step_program instrs s' m' s'' m'' ->
+    big_step_program (i :: instrs) s m s'' m''
+.
+
+Hint Constructors big_step_instr.
+Hint Constructors big_step_program.
+
+Scheme big_step_instr_mut := Induction for big_step_instr Sort Prop
+  with big_step_program_mut := Induction for big_step_program Sort Prop.
 End Ind_semantics.
 
 
