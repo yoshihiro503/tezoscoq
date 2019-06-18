@@ -390,73 +390,14 @@ Lemma step_fun_preserves_type pgm st1 st2 s m s' m' f :
   evaluate pgm s m f = Some (s',m') ->
   has_stack_type s' st2.
 Proof.
-move: f pgm st1 st2 s m.
-elim => [|f HIf] pgm st1 st2 s m //.
-case: pgm => [| i pgm] // .
-  by move => HPT; inversion HPT => HST //=.
-case: i => [| | (* Push *) d| | (* If *) bt bf| (* Loop *)body| (* Le *) | | |] /=.
-- case: s => [| x s]// .
-  move => HPT HST.
-  inversion HPT.
-  inversion HST.
-  inversion H2.
-  apply: HIf.
-    exact: H4.
-  rewrite -H8 in H10.
-  case: H10.
-    by move => _; rewrite -H11 => -> .
-- admit. (* TODO : Dup *)
-- admit. (* TODO : Push *)
-- admit. (* TODO : Pair *)
-- case: s => [| x s] //; case: x => // .
-  + move => HPT HST.
-    inversion HPT.
-    inversion H2.
-    apply: HIf.
-      apply: has_prog_type_cat.
-        exact: H12.
-        exact: H4.
-    rewrite -H7 in HST.
-    by inversion HST.
-  + move => HPT HST.
-    inversion HPT.
-    inversion H2.
-    apply: HIf.
-      apply: has_prog_type_cat.
-        exact: H13.
-        exact: H4.
-    rewrite -H7 in HST.
-    by inversion HST.
-- case: s => [| x s] //; case: x => // ; last first.
-  + move => HPT HST.
-    inversion HPT.
-    apply: HIf.
-      exact: H4.
-    inversion HST.
-    inversion H2.
-    rewrite -H8 in H11.
-    case: H11 => _.
-    by rewrite -H12 => -> .
-  + move => HPT HST.
-    inversion HPT.
-    inversion H2.
-    apply: HIf.
-      * apply: has_prog_type_cat.
-          exact: H10.
-        apply: PT_seq.
-          apply: IT_Loop.
-            exact: H9.
-          exact: H10.
-        exact: H4.
-      * inversion HST.
-        rewrite -H6 in H14.
-        case: H14 => _.
-          by rewrite -H7 => <- .
-- admit. (* TODO : Le *)
-- admit. (* TODO : Transfer_funds *)
-- admit. (* TODO : Now *)
-- admit. (* TODO : Balance *)
-Admitted.
+  move=> HPT HST Ev.
+  apply big_step_program_preserves_type with
+      (pgm := pgm)(s1 := s)(m1 := m)(st1 := st1)(m2 := m').
+  - exact HPT.
+  - exact HST.
+  - apply evaluate_sound.
+    by exists f.
+Qed.
 
 End Fun_semantics.
 
